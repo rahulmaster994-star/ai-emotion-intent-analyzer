@@ -1,0 +1,17 @@
+streamlit
+transformers
+torch
+torchvision
+torchaudio
+pandas
+plotly
+python-dotenv
+bcrypt
+passlib
+streamlit-cookies-controller
+Pillow
+requests
+scipy
+openai-whisper
+streamlit-mic-recorder
+moviepy

@@ -1,0 +1,84 @@
+/* light.css */
+body, [data-testid="stAppViewContainer"], .stApp {
+    background: #f0f4f8 !important;
+    color: #1a1a2e !important;
+}
+
+[data-testid="stSidebar"] {
+    background: #ffffff !important;
+    border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.glass-panel, .neon-card, .result-card {
+    background: rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(10px);
+}
+
+.glass-panel h1, .glass-panel h2, .glass-panel h3, .glass-panel h4, .glass-panel h5, .glass-panel h6, .glass-panel p, .glass-panel span, .glass-panel div, .glass-panel ul, .glass-panel li, .glass-panel b {
+    color: #1a1a2e !important;
+}
+
+.top-bar-container {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.top-bar span {
+    color: #1a1a2e !important;
+}
+
+/* Base button styling */
+.stButton>button {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    color: #1a1a2e !important;
+    box-shadow: none !important;
+}
+
+.stButton>button:hover {
+    background: rgba(240, 245, 255, 0.9) !important;
+    border: 1px solid #2575fc !important;
+    color: #2575fc !important;
+}
+
+/* Sidebar buttons */
+[data-testid="stSidebar"] .stButton>button {
+    background: transparent !important;
+    border: none !important;
+    color: #1a1a2e !important;
+}
+
+[data-testid="stSidebar"] .stButton>button:hover {
+    background: rgba(37, 117, 252, 0.1) !important;
+    border-left: 3px solid #2575fc !important;
+    color: #2575fc !important;
+}
+
+/* Text Area */
+.stTextArea>div>div>textarea {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.2) !important;
+    color: #1a1a2e !important;
+    box-shadow: none !important;
+}
+
+.stTextArea>div>div>textarea:focus {
+    border-color: #2575fc !important;
+    box-shadow: 0 0 10px rgba(37, 117, 252, 0.2) !important;
+}
+
+/* Markdown overrides */
+.stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown li {
+    color: #1a1a2e !important;
+}
+
+/* Bubbles */
+.bubble {
+    background: radial-gradient(circle at 30% 30%, rgba(37, 117, 252, 0.2), rgba(106, 17, 203, 0.05)) !important;
+}
+
+hr {
+    border-color: rgba(0,0,0,0.1) !important;
+}

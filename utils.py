@@ -18,32 +18,40 @@ def get_image_base64(image_filename):
 import streamlit.components.v1 as components
 
 def inject_3d_solar_system():
-    solar_js = """
-    <script>
-    const doc = window.parent.document;
-    if (!doc.getElementById('solar-system-canvas')) {
-        const canvas = doc.createElement('canvas');
-        canvas.id = 'solar-system-canvas';
-        canvas.style.position = 'fixed';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100vw';
-        canvas.style.height = '100vh';
-        canvas.style.zIndex = '-999';
-        canvas.style.pointerEvents = 'none';
-        canvas.style.background = '#050914';
-        doc.body.insertBefore(canvas, doc.body.firstChild);
+    # Inject CSS into the main Streamlit app to force the component iframe to be a full-screen background
+    st.markdown("""
+    <style>
+        iframe[title="streamlit.components.v1.components.html"] {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: -999 !important;
+            border: none !important;
+            pointer-events: none !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
+    solar_js = """
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background: #050914; }
+        canvas { display: block; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; }
+    </style>
+    <canvas id="solar-system-canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('solar-system-canvas');
         const ctx = canvas.getContext('2d');
         let width, height;
 
         function resize() {
-            width = window.parent.innerWidth;
-            height = window.parent.innerHeight;
+            width = window.innerWidth;
+            height = window.innerHeight;
             canvas.width = width;
             canvas.height = height;
         }
-        window.parent.addEventListener('resize', resize);
+        window.addEventListener('resize', resize);
         resize();
 
         const stars = [];
@@ -153,13 +161,12 @@ def inject_3d_solar_system():
                 drawSphere(x, y, r, p.color, false);
                 if (p.ring && p.pz <= 0) drawRing(x, y, r, scale);
             }
-            window.parent.requestAnimationFrame(animate);
+            requestAnimationFrame(animate);
         }
         animate();
-    }
     </script>
     """
-    components.html(solar_js, height=0, width=0)
+    components.html(solar_js, height=10, width=10)
 
 def load_css(theme='dark'):
     css_path = os.path.join(os.path.dirname(__file__), 'styles', 'custom.css')

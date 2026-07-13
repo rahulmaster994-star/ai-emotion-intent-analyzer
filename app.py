@@ -102,7 +102,7 @@ with st.sidebar:
     st.markdown('<p style="color:#aaa; font-size:12px; margin-bottom:5px; margin-top:15px;">Theme</p>', unsafe_allow_html=True)
     
     theme_options = ['dark', 'light', 'pink']
-    theme_display = ['🌙 Dark Mode', '☀️ Light Mode', '🌸 Pink Mode']
+    theme_display = ['🌙 Dark Mode', '☀️ Light Mode', '🌸 Premium Pink Mode']
     
     current_theme = st.session_state.get('theme', 'dark')
     if current_theme not in theme_options:

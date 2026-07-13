@@ -1,5 +1,15 @@
 import streamlit as st
 import time
+import os
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
+try:
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+    has_gemini = bool(os.getenv("GEMINI_API_KEY"))
+except Exception:
+    has_gemini = False
 
 try:
     from transformers import pipeline
@@ -86,8 +96,31 @@ def detect_urgency(text, model):
     except:
         return "Low", 0.0
 
-def generate_smart_reply(emotion, intent, tone, urgency):
-    # Rule-based contextual smart reply generation based on AI outputs
+def generate_smart_reply(emotion, intent, tone, urgency, input_message=""):
+    if has_gemini:
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            prompt = f"""
+            You are a professional, empathetic, and highly capable customer support assistant.
+            A user just sent the following message: "{input_message}"
+            
+            Our AI analysis system detected the following about the message:
+            - Emotion: {emotion}
+            - Intent: {intent}
+            - Tone: {tone}
+            - Urgency: {urgency}
+            
+            Based on this context, write a concise, professional, and empathetic response (2-3 sentences max) to directly address the user's issue or statement. 
+            Do not include placeholders like "[Your Name]". Sound like a confident, helpful AI.
+            """
+            response = model.generate_content(prompt)
+            if response.text:
+                return response.text.strip()
+        except Exception as e:
+            print(f"Gemini API error: {e}")
+            # Fall back to rule-based engine below if API fails
+            
+    # Rule-based contextual smart reply generation based on AI outputs (Fallback)
     reply = ""
     if urgency in ["Critical", "High"] or intent in ["Urgent help", "Technical issue"]:
         reply = "I understand this is critical. I'm escalating this immediately to our priority support team. "
@@ -131,7 +164,7 @@ def analyze_text(text):
     
     overall_conf = (emo_conf + int_conf + tone_conf + urg_conf) / 4.0
     
-    suggestion = generate_smart_reply(emotion, intent, tone, urgency)
+    suggestion = generate_smart_reply(emotion, intent, tone, urgency, text)
     explanation = generate_explanation(emotion, intent, urgency)
     
     return {

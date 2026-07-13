@@ -18,156 +18,59 @@ def get_image_base64(image_filename):
 import streamlit.components.v1 as components
 
 def inject_3d_solar_system():
-    # Inject CSS into the main Streamlit app to force the component iframe to be a full-screen background
-    st.markdown("""
-    <style>
-        /* Broad selector because Streamlit Cloud changes iframe titles */
-        iframe {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: -999 !important;
-            border: none !important;
-            pointer-events: none !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    # Generates a randomized starfield in HTML
+    import random
+    stars_html = ""
+    for _ in range(250):
+        x = random.randint(0, 100)
+        y = random.randint(0, 100)
+        size = random.uniform(0.5, 2.5)
+        opacity = random.uniform(0.3, 1.0)
+        stars_html += f'<div class="star" style="left: {x}vw; top: {y}vh; width: {size}px; height: {size}px; opacity: {opacity};"></div>'
 
-    solar_js = """
-    <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #050914; }
-        canvas { display: block; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; }
-    </style>
-    <canvas id="solar-system-canvas"></canvas>
-    <script>
-        const canvas = document.getElementById('solar-system-canvas');
-        const ctx = canvas.getContext('2d');
-        let width, height;
-
-        function resize() {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        const stars = [];
-        for(let i = 0; i < 800; i++) {
-            stars.push({
-                x: Math.random() * 2000 - 1000,
-                y: Math.random() * 2000 - 1000,
-                z: Math.random() * 2000 - 1000,
-                r: Math.random() * 1.2
-            });
-        }
-
-        const planets = [
-            {name: 'Mercury', r: 3, d: 60, s: 0.015, angle: Math.random()*Math.PI*2, color: '#a8a8a8'},
-            {name: 'Venus', r: 5, d: 100, s: 0.011, angle: Math.random()*Math.PI*2, color: '#e3bb76'},
-            {name: 'Earth', r: 5.5, d: 150, s: 0.009, angle: Math.random()*Math.PI*2, color: '#4b95f9'},
-            {name: 'Mars', r: 4, d: 200, s: 0.007, angle: Math.random()*Math.PI*2, color: '#e27b58'},
-            {name: 'Jupiter', r: 16, d: 320, s: 0.003, angle: Math.random()*Math.PI*2, color: '#c3a171'},
-            {name: 'Saturn', r: 13, d: 430, s: 0.002, angle: Math.random()*Math.PI*2, color: '#ead6b8', ring: true},
-            {name: 'Uranus', r: 9, d: 530, s: 0.001, angle: Math.random()*Math.PI*2, color: '#4fd0e7'},
-            {name: 'Neptune', r: 8.5, d: 620, s: 0.0008, angle: Math.random()*Math.PI*2, color: '#4b70dd'}
-        ];
-
-        let time = 0;
+    solar_html = f"""
+    <div class="starfield">
+        {stars_html}
+    </div>
+    <div class="solar-system">
+        <div class="sun"></div>
         
-        function drawSphere(x, y, r, color, glow) {
-            ctx.beginPath();
-            ctx.arc(x, y, r, 0, Math.PI * 2);
-            let grad = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
-            grad.addColorStop(0, '#ffffff');
-            grad.addColorStop(0.2, color);
-            grad.addColorStop(1, '#000000');
-            ctx.fillStyle = grad;
-            ctx.fill();
-        }
-
-        function drawRing(x, y, r, scale) {
-            ctx.beginPath();
-            ctx.ellipse(x, y, r * 2.4, r * 0.8, 0, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(234, 214, 184, 0.5)';
-            ctx.lineWidth = r * 0.4;
-            ctx.stroke();
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, width, height);
-            time += 1;
-            
-            const cx = width / 2;
-            const cy = height / 2;
-            
-            ctx.fillStyle = '#ffffff';
-            for(let i=0; i<stars.length; i++) {
-                let s = stars[i];
-                let sx = s.x * Math.cos(time*0.0002) - s.z * Math.sin(time*0.0002);
-                let sz = s.z * Math.cos(time*0.0002) + s.x * Math.sin(time*0.0002);
-                let scale = 800 / (800 + sz);
-                if(scale < 0) continue;
-                let px = cx + sx * scale;
-                let py = cy + s.y * scale;
-                ctx.globalAlpha = Math.min(1, scale * 0.8);
-                ctx.beginPath();
-                ctx.arc(px, py, s.r * scale, 0, Math.PI*2);
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-
-            ctx.beginPath();
-            ctx.arc(cx, cy, 35, 0, Math.PI * 2);
-            let sunGrad = ctx.createRadialGradient(cx, cy, 5, cx, cy, 35);
-            sunGrad.addColorStop(0, '#ffffff');
-            sunGrad.addColorStop(0.2, '#fff4cc');
-            sunGrad.addColorStop(0.8, '#ff9900');
-            sunGrad.addColorStop(1, '#ff3300');
-            ctx.fillStyle = sunGrad;
-            ctx.shadowBlur = 60;
-            ctx.shadowColor = '#ff6600';
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            
-            const perspectiveTilt = 0.35;
-            
-            ctx.lineWidth = 1;
-            for (let p of planets) {
-                ctx.beginPath();
-                ctx.ellipse(cx, cy, p.d, p.d * perspectiveTilt, 0, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-                ctx.stroke();
-            }
-
-            let renderPlanets = [];
-            for(let p of planets) {
-                p.angle -= p.s; 
-                let px = Math.cos(p.angle) * p.d;
-                let pz = Math.sin(p.angle) * p.d;
-                renderPlanets.push({...p, px: px, pz: pz});
-            }
-            renderPlanets.sort((a,b) => a.pz - b.pz);
-
-            for (let p of renderPlanets) {
-                let scale = 800 / (800 + p.pz);
-                let x = cx + p.px * scale;
-                let y = cy + (p.pz * perspectiveTilt) * scale;
-                let r = Math.max(0.1, p.r * scale);
-                
-                if (p.ring && p.pz > 0) drawRing(x, y, r, scale);
-                drawSphere(x, y, r, p.color, false);
-                if (p.ring && p.pz <= 0) drawRing(x, y, r, scale);
-            }
-            requestAnimationFrame(animate);
-        }
-        animate();
-    </script>
+        <div class="orbit mercury-orbit">
+            <div class="planet mercury"></div>
+        </div>
+        
+        <div class="orbit venus-orbit">
+            <div class="planet venus"></div>
+        </div>
+        
+        <div class="orbit earth-orbit">
+            <div class="planet earth"></div>
+        </div>
+        
+        <div class="orbit mars-orbit">
+            <div class="planet mars"></div>
+        </div>
+        
+        <div class="orbit jupiter-orbit">
+            <div class="planet jupiter"></div>
+        </div>
+        
+        <div class="orbit saturn-orbit">
+            <div class="planet saturn">
+                <div class="saturn-ring"></div>
+            </div>
+        </div>
+        
+        <div class="orbit uranus-orbit">
+            <div class="planet uranus"></div>
+        </div>
+        
+        <div class="orbit neptune-orbit">
+            <div class="planet neptune"></div>
+        </div>
+    </div>
     """
-    components.html(solar_js, height=10, width=10)
+    st.markdown(solar_html, unsafe_allow_html=True)
 
 def load_css(theme='dark'):
     css_path = os.path.join(os.path.dirname(__file__), 'styles', 'custom.css')

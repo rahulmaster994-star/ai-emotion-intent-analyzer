@@ -37,7 +37,7 @@ def inject_3d_solar_system():
 
     galaxy_js = """
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #020205; }
+        body { margin: 0; padding: 0; overflow: hidden; background: #05050a; }
         canvas { display: block; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; }
     </style>
     <canvas id="galaxy-canvas"></canvas>
@@ -56,57 +56,55 @@ def inject_3d_solar_system():
         resize();
 
         // Galaxy Configuration
-        const numStars = 4500;
-        const arms = 5;
-        const armSpread = 0.7;
-        let galaxyRadius = Math.max(width, height) * 0.8;
-        if (!galaxyRadius || galaxyRadius < 500) galaxyRadius = 800; // Fallback
+        const numStars = 5000;
+        let galaxyRadius = Math.max(width, height) * 0.9;
+        if (!galaxyRadius || galaxyRadius < 500) galaxyRadius = 1000;
         
         const stars = [];
+        const eventHorizonRadius = 80;
 
-        // Generate Archimedean Spiral Galaxy
         for (let i = 0; i < numStars; i++) {
-            // Logarithmic distribution (dense center, sparse edges)
-            let r = Math.pow(Math.random(), 2.5) * galaxyRadius; 
+            // Logarithmic distribution, but push everything outside the event horizon
+            let r = eventHorizonRadius + Math.pow(Math.random(), 2.2) * galaxyRadius; 
             
-            // Archimedean Spiral Math
-            let armOffset = (Math.random() - 0.5) * armSpread;
-            // Thicker spread at the center, thinner at edges
-            armOffset *= (1.5 - r/galaxyRadius);
+            // Random angle for vortex
+            let angle = Math.random() * Math.PI * 2;
             
-            let armIndex = i % arms;
-            // Angle increases with radius to form the spiral
-            let angle = (r * 0.008) + (armIndex * (Math.PI * 2 / arms)) + armOffset;
-            
-            // Z-axis (thickness of the galactic disc)
-            let zSpread = 120 * Math.exp(-r / 100); 
+            // Z-axis (disc thickness)
+            let zSpread = 100 * Math.exp(-(r - eventHorizonRadius) / 200); 
             let z = (Math.random() - 0.5) * zSpread;
             
-            // Color distribution
-            let colorRatio = r / galaxyRadius;
-            // Core is bright orange/yellow/white, edges are deep blue/purple
-            let rColor = Math.floor(255 - (200 * colorRatio));
-            let gColor = Math.floor(220 - (180 * colorRatio));
-            let bColor = Math.floor(150 + (105 * colorRatio));
+            // Color selection (Cyan, Magenta, Purple, Pink like the reference)
+            const colors = [
+                '#00ffff', // Cyan
+                '#ff00ff', // Magenta
+                '#8a2be2', // BlueViolet
+                '#ff1493', // DeepPink
+                '#9400d3'  // DarkViolet
+            ];
+            // Inner stars closer to the burning ring get a warmer tint, outer get the cyan/magenta
+            let isInner = r < eventHorizonRadius + 150;
+            let baseColor = isInner && Math.random() > 0.5 ? '#ff4500' : colors[Math.floor(Math.random() * colors.length)];
             
-            let isNebula = Math.random() > 0.97;
-            let size = isNebula ? Math.random() * 2.5 + 1.5 : Math.random() * 1.2 + 0.3;
-            let alpha = isNebula ? 0.9 : Math.random() * 0.7 + 0.1;
+            let size = Math.random() * 1.5 + 0.5;
+            let alpha = Math.random() * 0.8 + 0.2;
             
             stars.push({
                 r: r,
                 angle: angle,
                 z: z,
                 size: size,
-                color: `rgba(${rColor}, ${gColor}, ${bColor}, ${alpha})`,
-                speed: 0.001 + (0.008 * (100 / (r + 100))) // Keplerian-like orbits (inner faster)
+                color: baseColor,
+                alpha: alpha,
+                // Inner stars orbit much faster
+                speed: 0.002 + (0.02 * (100 / r))
             });
         }
 
         let time = 0;
 
         function animate() {
-            // Dark space background
+            // Very dark background
             ctx.fillStyle = '#020205';
             ctx.fillRect(0, 0, width, height);
             
@@ -115,53 +113,90 @@ def inject_3d_solar_system():
             const cx = width / 2;
             const cy = height / 2;
             
-            // Dynamic camera rotation
-            // Slowly wobble the tilt up and down between 50 and 70 degrees
-            let rotX = Math.PI / 2.8 + Math.sin(time * 0.3) * 0.15; 
-            // Slowly spin around the entire galaxy
-            let rotY = time * 0.15; 
+            // Dynamic camera rotation (slight 3D tilt)
+            let rotX = Math.PI / 3.5; 
+            let rotY = time * 0.2; // Spin the whole galaxy
             
-            // Draw Galactic Core Glow
-            let coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 250);
-            coreGlow.addColorStop(0, 'rgba(255, 220, 180, 0.5)');
-            coreGlow.addColorStop(0.3, 'rgba(150, 80, 255, 0.15)');
-            coreGlow.addColorStop(1, 'transparent');
-            ctx.fillStyle = coreGlow;
+            // 1. Draw Burning Orange Accretion Disk Glow
+            let diskGlow = ctx.createRadialGradient(cx, cy, eventHorizonRadius, cx, cy, eventHorizonRadius + 200);
+            diskGlow.addColorStop(0, 'rgba(255, 100, 0, 0.8)');   // Bright orange burning inside
+            diskGlow.addColorStop(0.2, 'rgba(255, 50, 0, 0.4)');  // Deep red/orange
+            diskGlow.addColorStop(0.5, 'rgba(128, 0, 255, 0.1)'); // Fading to purple
+            diskGlow.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = diskGlow;
+            
+            // Apply 3D transform to the glow to make it an ellipse
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(1, Math.cos(rotX)); // Squash it to match 3D tilt
+            ctx.translate(-cx, -cy);
             ctx.beginPath();
-            ctx.arc(cx, cy, 250, 0, Math.PI * 2);
+            ctx.arc(cx, cy, eventHorizonRadius + 200, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
 
+            // 2. Draw Stars
             for (let s of stars) {
-                // Orbital motion
                 s.angle += s.speed;
                 
-                // 2D position in the galactic plane
                 let x = Math.cos(s.angle) * s.r;
                 let y = Math.sin(s.angle) * s.r;
                 let z = s.z;
                 
-                // 3D Rotation (Y axis) - Galaxy spin
                 let x1 = x * Math.cos(rotY) - z * Math.sin(rotY);
                 let z1 = z * Math.cos(rotY) + x * Math.sin(rotY);
                 
-                // 3D Rotation (X axis) - Camera tilt
                 let y2 = y * Math.cos(rotX) - z1 * Math.sin(rotX);
                 let z2 = z1 * Math.cos(rotX) + y * Math.sin(rotX);
                 
-                // Perspective Projection
                 let scale = 1100 / (1100 + z2);
-                if (scale < 0) continue; // Behind camera
+                if (scale < 0) continue;
                 
                 let screenX = cx + x1 * scale;
                 let screenY = cy + y2 * scale;
                 
-                // Draw Star
+                ctx.globalAlpha = Math.min(1, s.alpha * scale);
                 ctx.fillStyle = s.color;
-                ctx.globalAlpha = Math.min(1, scale * 1.2);
+                
+                // Optional: Add glow to inner stars
+                if (s.r < eventHorizonRadius + 100) {
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = s.color;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+
                 ctx.beginPath();
                 ctx.arc(screenX, screenY, s.size * scale, 0, Math.PI * 2);
                 ctx.fill();
             }
+            
+            ctx.shadowBlur = 0; // Reset
+            
+            // 3. Draw The Black Hole (Event Horizon)
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.scale(1, Math.cos(rotX)); // Squash the black hole to match perspective
+            ctx.translate(-cx, -cy);
+            
+            // Outer harsh burning ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, eventHorizonRadius + 2, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 150, 0, 0.9)';
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#ff3300';
+            ctx.stroke();
+
+            // Inner absolute black void
+            ctx.beginPath();
+            ctx.arc(cx, cy, eventHorizonRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#000000';
+            ctx.shadowBlur = 0; // No glow on the black void
+            ctx.fill();
+            
+            ctx.restore();
             
             requestAnimationFrame(animate);
         }

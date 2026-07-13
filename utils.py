@@ -21,7 +21,8 @@ def inject_3d_solar_system():
     # Inject CSS into the main Streamlit app to force the component iframe to be a full-screen background
     st.markdown("""
     <style>
-        iframe[title="streamlit.components.v1.components.html"] {
+        /* Broad selector because Streamlit Cloud changes iframe titles */
+        iframe {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;

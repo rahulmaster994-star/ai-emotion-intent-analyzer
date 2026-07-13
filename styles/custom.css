@@ -6,6 +6,9 @@
 html, body, [class*="css"] {
     font-family: 'Outfit', sans-serif;
 }
+html {
+    background-color: #05050f !important;
+}
 
 body, .stApp {
     background-color: transparent !important;

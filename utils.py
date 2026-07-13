@@ -35,15 +35,15 @@ def inject_3d_solar_system():
     </style>
     """, unsafe_allow_html=True)
 
-    solar_js = """
+    galaxy_js = """
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: radial-gradient(circle at center, #0a0e17 0%, #000000 100%); }
+        body { margin: 0; padding: 0; overflow: hidden; background: #020205; }
         canvas { display: block; position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; }
     </style>
-    <canvas id="solar-system"></canvas>
+    <canvas id="galaxy-canvas"></canvas>
     <script>
-        const canvas = document.getElementById('solar-system');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('galaxy-canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
         let width, height;
 
         function resize() {
@@ -55,150 +55,120 @@ def inject_3d_solar_system():
         window.addEventListener('resize', resize);
         resize();
 
-        // Starfield
+        // Galaxy Configuration
+        const numStars = 4500;
+        const arms = 5;
+        const armSpread = 0.7;
+        let galaxyRadius = Math.max(width, height) * 0.8;
+        if (!galaxyRadius || galaxyRadius < 500) galaxyRadius = 800; // Fallback
+        
         const stars = [];
-        for(let i = 0; i < 1500; i++) {
+
+        // Generate Archimedean Spiral Galaxy
+        for (let i = 0; i < numStars; i++) {
+            // Logarithmic distribution (dense center, sparse edges)
+            let r = Math.pow(Math.random(), 2.5) * galaxyRadius; 
+            
+            // Archimedean Spiral Math
+            let armOffset = (Math.random() - 0.5) * armSpread;
+            // Thicker spread at the center, thinner at edges
+            armOffset *= (1.5 - r/galaxyRadius);
+            
+            let armIndex = i % arms;
+            // Angle increases with radius to form the spiral
+            let angle = (r * 0.008) + (armIndex * (Math.PI * 2 / arms)) + armOffset;
+            
+            // Z-axis (thickness of the galactic disc)
+            let zSpread = 120 * Math.exp(-r / 100); 
+            let z = (Math.random() - 0.5) * zSpread;
+            
+            // Color distribution
+            let colorRatio = r / galaxyRadius;
+            // Core is bright orange/yellow/white, edges are deep blue/purple
+            let rColor = Math.floor(255 - (200 * colorRatio));
+            let gColor = Math.floor(220 - (180 * colorRatio));
+            let bColor = Math.floor(150 + (105 * colorRatio));
+            
+            let isNebula = Math.random() > 0.97;
+            let size = isNebula ? Math.random() * 2.5 + 1.5 : Math.random() * 1.2 + 0.3;
+            let alpha = isNebula ? 0.9 : Math.random() * 0.7 + 0.1;
+            
             stars.push({
-                x: Math.random() * 3000 - 1500,
-                y: Math.random() * 3000 - 1500,
-                z: Math.random() * 3000 - 1500,
-                r: Math.random() * 1.5,
-                alpha: Math.random()
+                r: r,
+                angle: angle,
+                z: z,
+                size: size,
+                color: `rgba(${rColor}, ${gColor}, ${bColor}, ${alpha})`,
+                speed: 0.001 + (0.008 * (100 / (r + 100))) // Keplerian-like orbits (inner faster)
             });
         }
 
-        // Planets data (Realistic relative speeds & beautiful colors)
-        const planets = [
-            { name: 'Mercury', r: 2.5, d: 70, s: 0.012, angle: Math.random()*Math.PI*2, color: '#a8a8a8' },
-            { name: 'Venus',   r: 4.5, d: 110, s: 0.009, angle: Math.random()*Math.PI*2, color: '#e3bb76' },
-            { name: 'Earth',   r: 5,   d: 160, s: 0.007, angle: Math.random()*Math.PI*2, color: '#4b95f9' },
-            { name: 'Mars',    r: 3.5, d: 210, s: 0.005, angle: Math.random()*Math.PI*2, color: '#e27b58' },
-            { name: 'Jupiter', r: 14,  d: 340, s: 0.002, angle: Math.random()*Math.PI*2, color: '#c3a171' },
-            { name: 'Saturn',  r: 11,  d: 460, s: 0.0015, angle: Math.random()*Math.PI*2, color: '#ead6b8', ring: true },
-            { name: 'Uranus',  r: 8,   d: 570, s: 0.001, angle: Math.random()*Math.PI*2, color: '#4fd0e7' },
-            { name: 'Neptune', r: 7.5, d: 680, s: 0.0008, angle: Math.random()*Math.PI*2, color: '#4b70dd' }
-        ];
-
         let time = 0;
-        
-        function drawSphere(x, y, r, color) {
-            ctx.beginPath();
-            ctx.arc(x, y, r, 0, Math.PI * 2);
-            let grad = ctx.createRadialGradient(x - r*0.3, y - r*0.3, r*0.1, x, y, r);
-            grad.addColorStop(0, '#ffffff');
-            grad.addColorStop(0.2, color);
-            grad.addColorStop(0.8, '#000000');
-            ctx.fillStyle = grad;
-            ctx.fill();
-        }
 
         function animate() {
-            ctx.clearRect(0, 0, width, height);
-            time += 1;
+            // Dark space background
+            ctx.fillStyle = '#020205';
+            ctx.fillRect(0, 0, width, height);
+            
+            time += 0.005;
             
             const cx = width / 2;
             const cy = height / 2;
             
-            // Draw Stars with 3D rotation
-            for(let i=0; i<stars.length; i++) {
-                let s = stars[i];
-                // Rotate galaxy slowly
-                let sx = s.x * Math.cos(time*0.0001) - s.z * Math.sin(time*0.0001);
-                let sz = s.z * Math.cos(time*0.0001) + s.x * Math.sin(time*0.0001);
+            // Dynamic camera rotation
+            // Slowly wobble the tilt up and down between 50 and 70 degrees
+            let rotX = Math.PI / 2.8 + Math.sin(time * 0.3) * 0.15; 
+            // Slowly spin around the entire galaxy
+            let rotY = time * 0.15; 
+            
+            // Draw Galactic Core Glow
+            let coreGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 250);
+            coreGlow.addColorStop(0, 'rgba(255, 220, 180, 0.5)');
+            coreGlow.addColorStop(0.3, 'rgba(150, 80, 255, 0.15)');
+            coreGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = coreGlow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 250, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let s of stars) {
+                // Orbital motion
+                s.angle += s.speed;
                 
-                let scale = 1000 / (1000 + sz);
-                if(scale < 0) continue;
+                // 2D position in the galactic plane
+                let x = Math.cos(s.angle) * s.r;
+                let y = Math.sin(s.angle) * s.r;
+                let z = s.z;
                 
-                let px = cx + sx * scale;
-                let py = cy + s.y * scale;
+                // 3D Rotation (Y axis) - Galaxy spin
+                let x1 = x * Math.cos(rotY) - z * Math.sin(rotY);
+                let z1 = z * Math.cos(rotY) + x * Math.sin(rotY);
                 
-                ctx.globalAlpha = Math.min(1, s.alpha * scale);
-                ctx.fillStyle = '#ffffff';
+                // 3D Rotation (X axis) - Camera tilt
+                let y2 = y * Math.cos(rotX) - z1 * Math.sin(rotX);
+                let z2 = z1 * Math.cos(rotX) + y * Math.sin(rotX);
+                
+                // Perspective Projection
+                let scale = 1100 / (1100 + z2);
+                if (scale < 0) continue; // Behind camera
+                
+                let screenX = cx + x1 * scale;
+                let screenY = cy + y2 * scale;
+                
+                // Draw Star
+                ctx.fillStyle = s.color;
+                ctx.globalAlpha = Math.min(1, scale * 1.2);
                 ctx.beginPath();
-                ctx.arc(px, py, s.r * scale, 0, Math.PI*2);
+                ctx.arc(screenX, screenY, s.size * scale, 0, Math.PI * 2);
                 ctx.fill();
             }
-            ctx.globalAlpha = 1;
-
-            // Draw Sun Glow
-            ctx.beginPath();
-            ctx.arc(cx, cy, 40, 0, Math.PI * 2);
-            let sunGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 120);
-            sunGrad.addColorStop(0, '#ffffff');
-            sunGrad.addColorStop(0.1, '#fff4cc');
-            sunGrad.addColorStop(0.3, '#ff9900');
-            sunGrad.addColorStop(1, 'transparent');
-            ctx.fillStyle = sunGrad;
-            ctx.fill();
-
-            // Draw Sun Core
-            ctx.beginPath();
-            ctx.arc(cx, cy, 38, 0, Math.PI * 2);
-            let coreGrad = ctx.createRadialGradient(cx-10, cy-10, 5, cx, cy, 38);
-            coreGrad.addColorStop(0, '#ffffff');
-            coreGrad.addColorStop(0.5, '#ffcc00');
-            coreGrad.addColorStop(1, '#ff3300');
-            ctx.fillStyle = coreGrad;
-            ctx.fill();
             
-            const perspectiveTilt = 0.35; // 3D Tilt
-            
-            // Draw Orbits
-            ctx.lineWidth = 1;
-            for (let p of planets) {
-                ctx.beginPath();
-                ctx.ellipse(cx, cy, p.d, p.d * perspectiveTilt, 0, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-                ctx.stroke();
-            }
-
-            // Calculate Planet 3D Positions
-            let renderPlanets = [];
-            for(let p of planets) {
-                p.angle -= p.s; 
-                let px = Math.cos(p.angle) * p.d;
-                let pz = Math.sin(p.angle) * p.d;
-                renderPlanets.push({...p, px: px, pz: pz});
-            }
-            // Sort by Z index for proper 3D overlapping
-            renderPlanets.sort((a,b) => a.pz - b.pz);
-
-            // Draw Planets
-            for (let p of renderPlanets) {
-                let scale = 800 / (800 + p.pz);
-                let x = cx + p.px * scale;
-                let y = cy + (p.pz * perspectiveTilt) * scale;
-                let r = Math.max(0.5, p.r * scale);
-                
-                // Saturn's Back Ring
-                if (p.ring && p.pz > 0) {
-                    ctx.beginPath();
-                    ctx.ellipse(x, y, r * 2.8, r * 0.9, 0, Math.PI, Math.PI * 2);
-                    ctx.strokeStyle = 'rgba(234, 214, 184, 0.6)';
-                    ctx.lineWidth = r * 0.4;
-                    ctx.stroke();
-                }
-                
-                drawSphere(x, y, r, p.color);
-                
-                // Saturn's Front Ring
-                if (p.ring) {
-                    ctx.beginPath();
-                    // Draw front half if planet is behind, or full ring if planet is in front (handled by z-sort)
-                    let start = (p.pz <= 0) ? 0 : 0;
-                    let end = (p.pz <= 0) ? Math.PI*2 : Math.PI;
-                    ctx.ellipse(x, y, r * 2.8, r * 0.9, 0, start, end);
-                    ctx.strokeStyle = 'rgba(234, 214, 184, 0.8)';
-                    ctx.lineWidth = r * 0.4;
-                    ctx.stroke();
-                }
-            }
             requestAnimationFrame(animate);
         }
         animate();
     </script>
     """
-    components.html(solar_js, height=10, width=10)
+    components.html(galaxy_js, height=10, width=10)
 
 def load_css(theme='dark'):
     css_path = os.path.join(os.path.dirname(__file__), 'styles', 'custom.css')

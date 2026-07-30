@@ -120,7 +120,3 @@ This app is deployment-ready for Streamlit Cloud!
 - [ ] **Export to PDF:** Download beautiful analytics reports.
 
 ---
-
-<div align="center">
-  <i>Built with ❤️ by the AI Core Team.</i>
-</div>
